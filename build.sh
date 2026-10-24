@@ -44,6 +44,11 @@ if ! "$BUSYBOX" --list | grep -qx loadkmap; then
 fi
 loadkeys -b hu > "$INITRD/etc/hu.bmap"
 test -s "$INITRD/etc/hu.bmap"
+# Minimal root account database for BusyBox id/whoami/getent.
+# This changes the initramfs only, never the upstream kernel.
+printf '%s\n' 'root:x:0:0:root:/root:/bin/sh' > "$INITRD/etc/passwd"
+printf '%s\n' 'root:x:0:' > "$INITRD/etc/group"
+chmod 644 "$INITRD/etc/passwd" "$INITRD/etc/group"
 cp "$BUSYBOX" "$INITRD/bin/busybox"
 ln -sf busybox "$INITRD/bin/sh"
 cat > "$INITRD/init" <<'INIT'
