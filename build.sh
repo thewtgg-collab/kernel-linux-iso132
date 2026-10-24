@@ -17,11 +17,13 @@ for cmd in curl tar make gcc cpio gzip grub-mkrescue xorriso; do
 done
 BUSYBOX="$(command -v busybox || true)"
 [ -n "$BUSYBOX" ] || { echo "Install busybox-static" >&2; exit 1; }
-if ldd "$BUSYBOX" 2>&1 | grep -q 'not a dynamic executable\|statically linked'; then
-  echo "Static BusyBox available: $BUSYBOX"
-else
-  echo "BusyBox must be statically linked" >&2; exit 1
+# Static PIE binaries can be misreported by ldd. Check the ELF
+# program headers instead: a static binary has no PT_INTERP loader.
+if readelf -l "$BUSYBOX" | grep -q 'INTERP'; then
+  echo "BusyBox requires a dynamic ELF loader: $BUSYBOX" >&2
+  exit 1
 fi
+echo "Static BusyBox available: $BUSYBOX"
 
 mkdir -p "$WORK"
 ARCHIVE="$WORK/linux-${KERNEL_VERSION}.tar.xz"
