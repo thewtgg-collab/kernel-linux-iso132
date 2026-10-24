@@ -76,7 +76,7 @@ cat > "$ISO/boot/grub/grub.cfg" <<'GRUB'
 set timeout=2
 set default=0
 menuentry "Kernel Linux (unmodified upstream kernel)" {
-    linux /boot/vmlinuz console=tty0 rdinit=/init
+    linux /boot/vmlinuz console=tty0 rdinit=/init noapic
     initrd /boot/initramfs.cpio.gz
 }
 GRUB
