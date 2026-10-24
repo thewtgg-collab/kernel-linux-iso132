@@ -12,7 +12,7 @@ ISO="${WORK}/iso"
 INITRD="${WORK}/initrd"
 JOBS="${JOBS:-2}"
 
-for cmd in curl tar make gcc cpio gzip grub-mkrescue xorriso; do
+for cmd in curl tar make gcc cpio gzip grub-mkrescue xorriso loadkeys; do
   command -v "$cmd" >/dev/null || { echo "Missing build tool: $cmd" >&2; exit 1; }
 done
 BUSYBOX="$(command -v busybox || true)"
@@ -37,6 +37,13 @@ make -C "$SRC" O="$OUT" ARCH=x86_64 x86_64_defconfig
 make -C "$SRC" O="$OUT" ARCH=x86_64 -j"$JOBS" bzImage
 cp "$OUT/arch/x86/boot/bzImage" "$ISO/boot/vmlinuz"
 
+# Generate a Hungarian keyboard binary map; Linux kernel source remains pristine.
+if ! "$BUSYBOX" --list | grep -qx loadkmap; then
+  echo "BusyBox has no loadkmap applet" >&2
+  exit 1
+fi
+loadkeys -b hu > "$INITRD/etc/hu.bmap"
+test -s "$INITRD/etc/hu.bmap"
 cp "$BUSYBOX" "$INITRD/bin/busybox"
 ln -sf busybox "$INITRD/bin/sh"
 cat > "$INITRD/init" <<'INIT'
@@ -46,6 +53,7 @@ export PATH=/bin:/sbin
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+/bin/busybox loadkmap < /etc/hu.bmap || echo "Could not load Hungarian keyboard map"
 clear
 echo ""
 echo "========================================"
